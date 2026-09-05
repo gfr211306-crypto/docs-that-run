@@ -1,0 +1,3 @@
+# docs-that-run v0.1 has no third-party runtime dependencies.
+# Test dependency:
+pytest>=7
