@@ -69,8 +69,9 @@ dtr README.md --allow-exec
 
 ## 標記語法
 
-以下區塊會被辨識並執行：
+以下是可放入其他 Markdown 文件的標記語法展示：
 
+````markdown
 ```python dtr-run
 print("Hello from docs-that-run")
 ```
@@ -84,6 +85,7 @@ from pathlib import Path
 
 print(Path("shared_file.txt").read_text(encoding="utf-8").strip())
 ```
+````
 
 沒有 `dtr-run` 的區塊只會作為一般文件範例，不會執行：
 

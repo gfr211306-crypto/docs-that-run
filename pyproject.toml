@@ -24,6 +24,10 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Repository = "https://github.com/gfr211306-crypto/docs-that-run"
+Issues = "https://github.com/gfr211306-crypto/docs-that-run/issues"
+
 [project.optional-dependencies]
 test = [
     "pytest>=7",

@@ -10,6 +10,7 @@ from docs_that_run.reporter import report_result, report_summary
 
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "sample_readme.md"
+README = Path(__file__).parents[1] / "README.md"
 
 
 @pytest.mark.parametrize(
@@ -75,6 +76,10 @@ def test_example_markdown_executes_in_order_and_reports_results() -> None:
             if child.is_file():
                 child.unlink()
         workdir.rmdir()
+
+
+def test_readme_contains_no_executable_blocks() -> None:
+    assert parse_markdown(README) == []
 
 
 def test_cli_does_not_execute_without_allow_exec(tmp_path: Path) -> None:
