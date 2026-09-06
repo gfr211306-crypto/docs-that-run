@@ -10,6 +10,10 @@ import re
 _OPENING_FENCE = re.compile(
     r"^(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})(?P<info>[^\r\n]*)$"
 )
+_LIST_ITEM = re.compile(
+    r"^(?P<indent> *)(?P<marker>[*+-]|\d{1,9}[.)])"
+    r"(?P<spacing> {1,4})(?=\S)"
+)
 _RAW_HTML_TAG = re.compile(
     r"^</?[A-Za-z][A-Za-z0-9-]*(?:\s|/?>|$)"
 )
@@ -74,6 +78,8 @@ def parse_markdown_text(
     code_lines: list[str] = []
     html_end_marker: str | None = None
     html_until_blank_line = False
+    list_content_indent: int | None = None
+    fence_container_indent = 0
 
     for line_number, line in enumerate(text.splitlines(), start=1):
         if fence_character is None:
@@ -96,7 +102,16 @@ def parse_markdown_text(
                     html_end_marker = end_marker
                 continue
 
-            match = _OPENING_FENCE.match(line)
+            item_indent = _list_item_content_indent(line, list_content_indent)
+            if item_indent is not None:
+                list_content_indent = item_indent
+            elif line.strip() and list_content_indent is not None:
+                line_indent = len(line) - len(line.lstrip(" "))
+                if line_indent < list_content_indent:
+                    list_content_indent = None
+
+            fence_line = _remove_container_indent(line, list_content_indent)
+            match = _OPENING_FENCE.match(fence_line)
             if match is None:
                 continue
 
@@ -110,7 +125,8 @@ def parse_markdown_text(
 
             fence_character = fence[0]
             fence_length = len(fence)
-            fence_indent = len(match.group("indent"))
+            fence_container_indent = list_content_indent or 0
+            fence_indent = fence_container_indent + len(match.group("indent"))
             opening_line = line_number
             language = _LANGUAGE_ALIASES.get(raw_language)
             is_executable = (
@@ -119,7 +135,12 @@ def parse_markdown_text(
             code_lines = []
             continue
 
-        if _is_closing_fence(line, fence_character, fence_length):
+        closing_line = _remove_container_indent(line, fence_container_indent)
+        if _is_closing_fence(
+            closing_line,
+            fence_character,
+            fence_length,
+        ):
             if is_executable and language is not None:
                 blocks.append(
                     CodeBlock(
@@ -133,6 +154,7 @@ def parse_markdown_text(
             fence_character = None
             fence_length = 0
             fence_indent = 0
+            fence_container_indent = 0
             opening_line = 0
             language = None
             is_executable = False
@@ -157,16 +179,14 @@ def parse_markdown_text(
 
 
 def _html_block_start(line: str) -> tuple[str | None, int] | None:
-    comment_start = line.find("<!--")
-    if comment_start >= 0:
-        return "-->", comment_start + len("<!--")
-
     stripped = line.lstrip(" ")
     indent = len(line) - len(stripped)
     if indent > 3:
         return None
 
     lowered = stripped.lower()
+    if stripped.startswith("<!--"):
+        return "-->", len("<!--")
     script_match = _RAW_HTML_SCRIPT_TAG.match(stripped)
     if script_match is not None:
         return f"</{script_match.group('tag').lower()}>", script_match.end()
@@ -180,6 +200,38 @@ def _html_block_start(line: str) -> tuple[str | None, int] | None:
         return None, 0
 
     return None
+
+
+def _list_item_content_indent(
+    line: str,
+    current_indent: int | None,
+) -> int | None:
+    match = _LIST_ITEM.match(line)
+    if match is None:
+        return None
+
+    marker_indent = len(match.group("indent"))
+    if current_indent is None:
+        if marker_indent > 3:
+            return None
+    elif marker_indent > 3 and not (
+        current_indent <= marker_indent <= current_indent + 3
+    ):
+        return None
+
+    return (
+        marker_indent
+        + len(match.group("marker"))
+        + len(match.group("spacing"))
+    )
+
+
+def _remove_container_indent(line: str, indent: int | None) -> str:
+    if not indent:
+        return line
+    if not line.startswith(" " * indent):
+        return line
+    return line[indent:]
 
 
 def _is_closing_fence(line: str, character: str, minimum_length: int) -> bool:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docs-that-run"
-version = "0.1.0"
+version = "0.1.1"
 description = "Validate explicitly marked Python and Bash code blocks in Markdown files."
 readme = "README.md"
 requires-python = ">=3.9"

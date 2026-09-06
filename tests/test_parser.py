@@ -98,3 +98,44 @@ def test_unclosed_marked_fence_extends_to_end_of_document() -> None:
 
     assert len(blocks) == 1
     assert blocks[0].code == "print('end')"
+
+
+def test_recognizes_marked_fence_inside_ordered_list_item() -> None:
+    text = """\
+10. Install
+    ```bash dtr-run
+    pip install foo
+    ```
+"""
+
+    blocks = parse_markdown_text(text)
+
+    assert len(blocks) == 1
+    assert blocks[0].language == "bash"
+    assert blocks[0].line_number == 2
+    assert blocks[0].code == "pip install foo"
+
+
+def test_inline_escaped_comment_opener_does_not_hide_later_fence() -> None:
+    text = """\
+Use \\<!-- in ordinary prose to describe an HTML comment opener.
+
+```python dtr-run
+print("still visible")
+```
+"""
+
+    blocks = parse_markdown_text(text)
+
+    assert len(blocks) == 1
+    assert blocks[0].code == 'print("still visible")'
+
+
+def test_dtr_run_marker_is_case_sensitive() -> None:
+    text = """\
+```python DTR-RUN
+print("must be ignored")
+```
+"""
+
+    assert parse_markdown_text(text) == []

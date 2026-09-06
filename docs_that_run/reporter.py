@@ -62,10 +62,11 @@ def report_result(
     """Display one block execution result."""
 
     block = result.block
+    source_location = _source_location(block)
     print(SEPARATOR, file=stream)
     print(
         f"[{index}/{total}] 執行 {block.display_language} 區塊 "
-        f"(第 {block.line_number} 行)",
+        f"({source_location})",
         file=stream,
     )
     print(SEPARATOR, file=stream)
@@ -75,7 +76,15 @@ def report_result(
     elif result.timed_out:
         print(f"❌ Timeout ({result.duration:.2f}s)", file=stream)
     else:
-        print(f"❌ 失敗 ({result.duration:.2f}s)", file=stream)
+        exit_code = (
+            str(result.return_code)
+            if result.return_code is not None
+            else "unavailable"
+        )
+        print(
+            f"❌ 失敗 (exit code {exit_code}) ({result.duration:.2f}s)",
+            file=stream,
+        )
 
     if result.stdout:
         print("輸出:", file=stream)
@@ -107,3 +116,8 @@ def report_summary(
     print(file=stream)
     print(f"📁 工作目錄: {Path(working_directory)}", file=stream)
     print("   (執行過程中產生的檔案保存在此目錄)", file=stream)
+
+
+def _source_location(block: CodeBlock) -> str:
+    source_name = block.source.name if block.source is not None else "<unknown>"
+    return f"{source_name}:{block.line_number}"
