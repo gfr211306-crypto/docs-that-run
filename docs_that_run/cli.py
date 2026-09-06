@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import sys
-from typing import Callable, Sequence, TextIO
+from typing import Callable, Optional, Sequence, TextIO
 
 from .executor import create_working_directory, execute_block
 from .parser import CodeBlock, parse_markdown
@@ -38,7 +38,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 
 def main(
-    argv: Sequence[str] | None = None,
+    argv: Optional[Sequence[str]] = None,
     *,
     input_func: InputFunction = input,
     stdout: TextIO = sys.stdout,

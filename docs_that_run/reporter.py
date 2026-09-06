@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
-from typing import Iterable, TextIO
+from typing import Iterable, TextIO, Union
 
 from .executor import ExecutionResult
 from .parser import CodeBlock
@@ -14,7 +14,7 @@ SEPARATOR = "━" * 43
 
 
 def report_scan(
-    path: str | Path,
+    path: Union[str, Path],
     blocks: list[CodeBlock],
     *,
     stream: TextIO = sys.stdout,
@@ -97,7 +97,7 @@ def report_result(
 
 def report_summary(
     results: Iterable[ExecutionResult],
-    working_directory: str | Path,
+    working_directory: Union[str, Path],
     *,
     stream: TextIO = sys.stdout,
 ) -> None:

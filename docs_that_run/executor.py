@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from typing import Optional, Union
 
 from .parser import CodeBlock
 
@@ -25,7 +26,7 @@ class ExecutionResult:
 
     block: CodeBlock
     success: bool
-    return_code: int | None
+    return_code: Optional[int]
     stdout: str
     stderr: str
     duration: float
@@ -41,7 +42,7 @@ def create_working_directory() -> Path:
 
 def execute_block(
     block: CodeBlock,
-    working_directory: str | Path,
+    working_directory: Union[str, Path],
     *,
     timeout: float = DEFAULT_TIMEOUT,
 ) -> ExecutionResult:
@@ -127,7 +128,7 @@ def execute_block(
         )
 
 
-def find_bash() -> str | None:
+def find_bash() -> Optional[str]:
     """Locate a Bash-compatible executable without downloading anything."""
 
     candidates: list[Path] = []

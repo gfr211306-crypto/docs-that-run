@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import re
+from typing import Optional, Union
 
 
 _OPENING_FENCE = re.compile(
@@ -37,7 +38,7 @@ class CodeBlock:
     language: str
     code: str
     line_number: int
-    source: Path | None = None
+    source: Optional[Path] = None
 
     @property
     def display_language(self) -> str:
@@ -46,7 +47,7 @@ class CodeBlock:
         return "Python" if self.language == "python" else "Bash"
 
 
-def parse_markdown(path: str | Path) -> list[CodeBlock]:
+def parse_markdown(path: Union[str, Path]) -> list[CodeBlock]:
     """Read *path* as UTF-8 Markdown and return marked executable blocks."""
 
     markdown_path = Path(path)
@@ -57,7 +58,7 @@ def parse_markdown(path: str | Path) -> list[CodeBlock]:
 def parse_markdown_text(
     text: str,
     *,
-    source: str | Path | None = None,
+    source: Optional[Union[str, Path]] = None,
 ) -> list[CodeBlock]:
     """Parse Markdown text and return supported blocks marked ``dtr-run``.
 
@@ -69,16 +70,16 @@ def parse_markdown_text(
     source_path = Path(source) if source is not None else None
     blocks: list[CodeBlock] = []
 
-    fence_character: str | None = None
+    fence_character: Optional[str] = None
     fence_length = 0
     fence_indent = 0
     opening_line = 0
-    language: str | None = None
+    language: Optional[str] = None
     is_executable = False
     code_lines: list[str] = []
-    html_end_marker: str | None = None
+    html_end_marker: Optional[str] = None
     html_until_blank_line = False
-    list_content_indent: int | None = None
+    list_content_indent: Optional[int] = None
     fence_container_indent = 0
 
     for line_number, line in enumerate(text.splitlines(), start=1):
@@ -178,7 +179,9 @@ def parse_markdown_text(
     return blocks
 
 
-def _html_block_start(line: str) -> tuple[str | None, int] | None:
+def _html_block_start(
+    line: str,
+) -> Optional[tuple[Optional[str], int]]:
     stripped = line.lstrip(" ")
     indent = len(line) - len(stripped)
     if indent > 3:
@@ -204,8 +207,8 @@ def _html_block_start(line: str) -> tuple[str | None, int] | None:
 
 def _list_item_content_indent(
     line: str,
-    current_indent: int | None,
-) -> int | None:
+    current_indent: Optional[int],
+) -> Optional[int]:
     match = _LIST_ITEM.match(line)
     if match is None:
         return None
@@ -226,7 +229,7 @@ def _list_item_content_indent(
     )
 
 
-def _remove_container_indent(line: str, indent: int | None) -> str:
+def _remove_container_indent(line: str, indent: Optional[int]) -> str:
     if not indent:
         return line
     if not line.startswith(" " * indent):

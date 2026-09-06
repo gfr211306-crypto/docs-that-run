@@ -1,5 +1,6 @@
 from io import StringIO
 from pathlib import Path
+from typing import Optional
 
 from docs_that_run.executor import ExecutionResult
 from docs_that_run.parser import CodeBlock
@@ -9,7 +10,7 @@ from docs_that_run.reporter import report_result
 def result(
     *,
     success: bool,
-    return_code: int | None,
+    return_code: Optional[int],
     source: Path,
     line_number: int,
 ) -> ExecutionResult:
