@@ -1,0 +1,13 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 回報安全性問題
+    url: https://github.com/gfr211306-crypto/docs-that-run/security/advisories/new
+    about: 請勿以公開 issue 回報安全性問題，改用私下的 security advisory。
+
+  - name: 閱讀安全政策與威脅模型
+    url: https://github.com/gfr211306-crypto/docs-that-run/blob/main/SECURITY.md
+    about: 想了解 --allow-exec 的風險邊界、哪些行為屬於已知限制，先看這裡。
+
+  - name: 使用方式問題
+    url: https://github.com/gfr211306-crypto/docs-that-run/blob/main/README.md
+    about: 安裝、標記語法與 CLI 用法都寫在 README。

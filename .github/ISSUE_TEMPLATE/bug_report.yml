@@ -1,0 +1,86 @@
+name: 錯誤回報
+description: 回報 dtr 的行為不符合預期
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝回報。**安全性問題請勿使用這個表單**，請改用
+        [private security advisory](https://github.com/gfr211306-crypto/docs-that-run/security/advisories/new)。
+
+  - type: input
+    id: version
+    attributes:
+      label: dtr 版本
+      description: 執行 `pip show docs-that-run` 可以看到
+      placeholder: "0.1.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 作業系統
+      options:
+        - Linux
+        - macOS
+        - Windows
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python 版本
+      description: 執行 `python --version`
+      placeholder: "3.12.4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: markdown
+    attributes:
+      label: 最小重現用的 Markdown
+      description: 能觸發問題的最小內容。請貼原始碼，不要貼渲染後的畫面。
+      placeholder: |
+        ```python
+        print("hello")
+        ```
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: 執行的指令
+      placeholder: "dtr README.md --allow-exec"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 實際輸出
+      description: 完整貼上終端機輸出，包含錯誤訊息
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期行為
+      description: 你認為應該發生什麼
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 確認事項
+      options:
+        - label: 我已確認這不是安全性問題（安全性問題請改用 private advisory）
+          required: true
+        - label: 我使用的是最新版本，或已確認最新版仍有此問題
+          required: true

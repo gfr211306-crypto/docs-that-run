@@ -1,0 +1,52 @@
+name: 功能建議
+description: 提出新功能或行為調整
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        請先說明**使用情境**，而不只是你想要的介面。情境清楚了，實作方式
+        通常會有比原本設想更好的選項。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你遇到的問題
+      description: 你在什麼情況下需要這個功能？現在會卡在哪裡？
+      placeholder: 我想在 CI 上驗證 README 的範例，但是……
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 目前的替代做法
+      description: 現在你怎麼繞過這個問題？沒有的話寫「無」。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你的提案
+      description: 若已有想法，說明預期的行為、CLI 介面或輸出格式
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 這個提案是否涉及以下範圍
+      description: 這些方向需要先討論設計，請勾選相關項目
+      options:
+        - label: 需要新增第三方套件作為執行期依賴
+        - label: 會改變 --allow-exec 或確認提示的行為
+        - label: 會改變哪些程式碼區塊被視為可執行
+        - label: 支援 Python／Bash 以外的語言
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: 貢獻意願
+      options:
+        - label: 我願意送 PR 實作這個功能
