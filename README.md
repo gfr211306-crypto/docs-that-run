@@ -47,6 +47,8 @@ dtr README.md --allow-exec
 
 Add `dtr-run` after the language identifier:
 
+The `dtr-run` marker is case-sensitive and must be lowercase.
+
 ````markdown
 ```python dtr-run
 print("Hello from docs-that-run")

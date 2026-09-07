@@ -8,3 +8,4 @@ htmlcov/
 venv/
 build/
 dist/
+RELEASE_WORKFLOW_READY.md
