@@ -1,0 +1,7 @@
+interface:
+  display_name: "Docs That Run"
+  short_description: "Validate marked Python and Bash examples in Markdown"
+  default_prompt: "Use $docs-that-run to scan my Markdown documentation for executable examples."
+
+policy:
+  allow_implicit_invocation: false

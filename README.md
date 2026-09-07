@@ -1,76 +1,51 @@
 # docs-that-run
 
-`docs-that-run` 是一個輕量級的 Markdown 文件驗證工具。它只會辨識明確標記
-`dtr-run` 的 Python 與 Bash fenced code block，並在使用者明確允許及確認後，
-按照文件中的順序執行。
+[![CI](https://github.com/gfr211306-crypto/docs-that-run/actions/workflows/ci.yml/badge.svg)](https://github.com/gfr211306-crypto/docs-that-run/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/docs-that-run.svg)](https://pypi.org/project/docs-that-run/)
+[![Python Version](https://img.shields.io/pypi/pyversions/docs-that-run.svg)](https://pypi.org/project/docs-that-run/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 功能範圍
+**Validate code examples in your documentation by actually running them.**
 
-- 只讀取本機 `.md` Markdown 文件。
-- 只支援 Python（`python`、`py`）與 Bash（`bash`、`sh`）。
-- 只處理語言標籤後含有 `dtr-run` 的程式碼區塊；此 marker
-  **區分大小寫**，必須使用完全相同的小寫拼法。
-- 預設只掃描，不執行任何程式碼。
-- 必須提供 `--allow-exec`，並在提示中回答 `y` 才會執行。
-- 每個程式碼區塊預設最多執行 30 秒。
-- 區塊依照 Markdown 中的順序執行。
-- 同一次執行共用一個保留的暫存工作目錄，因此可以跨區塊共享檔案。
-- 每個區塊使用獨立程序，不保留 Python 狀態、`cd` 或 `export` 狀態。
-- 顯示成功或失敗、stdout、stderr、執行時間與工作目錄。
+`docs-that-run` parses Markdown files and executes explicitly marked Python and Bash code blocks to verify your documentation stays accurate. It only runs code you explicitly mark with `dtr-run`, and only after you confirm.
 
-## 需求
-
-- Python 3.9 或更新版本
-- 若要執行 Bash 區塊，本機必須有 Bash。Windows 可使用 Git for Windows
-  提供的 Bash。
-
-本工具不會下載遠端文件，也不會替程式碼安裝依賴套件。
-
-## 安裝
-
-從專案根目錄安裝：
+## Quick Start
 
 ```bash
-python -m pip install .
+pip install docs-that-run
 ```
 
-開發與測試安裝：
+Mark executable code blocks in your Markdown:
 
-```bash
-python -m pip install -e ".[test]"
+````markdown
+```python dtr-run
+print("This will be validated")
 ```
+````
 
-## 使用
-
-未指定檔案時掃描 `README.md`：
-
-```bash
-dtr
-```
-
-掃描指定檔案：
+Scan your documentation (shows what would run, but doesn't execute):
 
 ```bash
 dtr README.md
 ```
 
-掃描多個檔案：
-
-```bash
-dtr README.md examples/sample_readme.md
-```
-
-以上指令都不會執行程式碼。只有明確加入 `--allow-exec` 才會進入執行確認：
+Actually execute the marked blocks (requires confirmation):
 
 ```bash
 dtr README.md --allow-exec
 ```
 
-看到確認提示後輸入 `y` 才會執行；輸入其他內容或無法讀取輸入時會取消。
+## How It Works
 
-## 標記語法
+1. **Opt-in only**: Only code blocks marked with `dtr-run` are recognized
+2. **Scan by default**: Without `--allow-exec`, dtr only reports what it found
+3. **Explicit confirmation**: With `--allow-exec`, you must type `y` to proceed
+4. **Sequential execution**: Blocks run in document order, sharing a temp directory
+5. **Clear reporting**: See stdout, stderr, timing, and success/failure for each block
 
-以下是可放入其他 Markdown 文件的標記語法展示：
+## Marking Syntax
+
+Add `dtr-run` after the language identifier:
 
 ````markdown
 ```python dtr-run
@@ -78,45 +53,117 @@ print("Hello from docs-that-run")
 ```
 
 ```bash dtr-run
-printf '%s\n' 'shared from Bash' > shared_file.txt
+echo "This will be executed" > output.txt
 ```
 
 ```python dtr-run
-from pathlib import Path
-
-print(Path("shared_file.txt").read_text(encoding="utf-8").strip())
+# Blocks share a working directory
+with open("output.txt") as f:
+    print(f.read())
 ```
 ````
 
-沒有 `dtr-run` 的區塊只會作為一般文件範例，不會執行：
+Blocks without `dtr-run` are ignored:
 
+````markdown
 ```python
-print("This block is not executable")
+# This is just documentation, won't be executed
+print("Example only")
+```
+````
+
+## Installation
+
+From PyPI:
+
+```bash
+pip install docs-that-run
 ```
 
-## 測試
+From source:
+
+```bash
+git clone https://github.com/gfr211306-crypto/docs-that-run.git
+cd docs-that-run
+pip install -e ".[test]"
+```
+
+## Usage
+
+Scan `README.md` (default):
+
+```bash
+dtr
+```
+
+Scan specific files:
+
+```bash
+dtr docs/tutorial.md examples/quickstart.md
+```
+
+Execute marked blocks (requires `--allow-exec` flag AND interactive confirmation):
+
+```bash
+dtr README.md --allow-exec
+```
+
+Type `y` to proceed. Any other input cancels execution.
+
+## Requirements
+
+- Python 3.9 or newer
+- Bash (for bash blocks; Windows users can use Git for Windows)
+
+## Security Warning
+
+**⚠️ `--allow-exec` executes code directly on your machine with no sandboxing.**
+
+v0.1 has **no isolation**:
+- No CPU, memory, or filesystem limits
+- No network restrictions
+- Full access to your user account's permissions
+
+**Only use `--allow-exec` on Markdown files you trust completely.**
+
+Do not run untrusted documentation, third-party examples, or files from unknown sources.
+
+## Example
+
+Try the included example:
+
+```bash
+dtr examples/sample_readme.md --allow-exec
+```
+
+## Testing
+
+Run the test suite:
 
 ```bash
 pytest
 ```
 
-測試用 Markdown 位於 `tests/fixtures/`，可手動執行的完整範例位於
-`examples/sample_readme.md`。
+All tests are in `tests/`, with test fixtures in `tests/fixtures/`.
 
-## 安全注意事項
+## v0.1 Limitations
 
-`--allow-exec` 會在本機直接執行文件中的程式碼。v0.1 沒有沙箱、CPU、
-記憶體或檔案系統隔離；請只執行你信任的文件。
+- **Languages**: Only Python and Bash
+- **Sources**: Local Markdown files only (no remote URLs or repos)
+- **Dependencies**: Doesn't install packages or manage virtual environments
+- **Isolation**: No sandboxing, resource limits, or permission controls
+- **State**: Each block runs in a fresh process; Python variables and shell state (cd, export) are not preserved between blocks
+- **Filesystem**: Blocks share a single temp directory for the session
+- **Interactivity**: No support for interactive programs or GUIs
+- **Output**: Terminal only (no HTML, JSON, or JUnit reports)
 
-## v0.1 限制
+## Contributing
 
-- 不支援 Python 與 Bash 以外的語言。
-- 不支援遠端文件或遠端 repository。
-- 不安裝程式碼所需依賴，也不管理虛擬環境。
-- 不支援互動式、平行或圖形介面程式。
-- 不在區塊之間共享 Python 變數、shell 環境變數或 `cd` 狀態。
-- 只輸出終端機報告，不產生 HTML、JSON 或 JUnit 報告。
-- 沒有沙箱與資源限制；timeout 只限制執行時間。
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and how to submit issues or pull requests.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for security considerations and how to report vulnerabilities.
 
 ## License
 
