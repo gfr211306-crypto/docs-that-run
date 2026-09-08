@@ -1,0 +1,83 @@
+name: 'Docs That Run'
+description: 'Validate the runnable examples in your Markdown documentation, including multi-step shell tutorials.'
+author: 'gfr211306-crypto'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  files:
+    description: 'Markdown files to check, separated by spaces.'
+    required: false
+    default: 'README.md'
+  execute:
+    description: 'Execute the blocks marked with dtr-run. Set to "false" to scan only and never run anything.'
+    required: false
+    default: 'true'
+  version:
+    description: 'Version of docs-that-run to install. Defaults to the latest release on PyPI.'
+    required: false
+    default: ''
+  python-version:
+    description: 'Python version used to install docs-that-run and run the examples.'
+    required: false
+    default: '3.12'
+
+outputs:
+  report:
+    description: >-
+      The JSON report for this run. Produced even when the step fails, so a
+      later step can hand the failing blocks to an agent for diagnosis.
+    value: ${{ steps.validate.outputs.report }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install docs-that-run
+      shell: bash
+      env:
+        DTR_VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        if [ -n "$DTR_VERSION" ]; then
+          python -m pip install --disable-pip-version-check "docs-that-run==$DTR_VERSION"
+        else
+          python -m pip install --disable-pip-version-check docs-that-run
+        fi
+
+    - name: Validate documentation
+      id: validate
+      shell: bash
+      env:
+        DTR_FILES: ${{ inputs.files }}
+        DTR_EXECUTE: ${{ inputs.execute }}
+      run: |
+        set -uo pipefail
+        report="$RUNNER_TEMP/dtr-report.json"
+
+        # Human-readable progress goes to stderr and lands in the job log;
+        # stdout carries only the JSON report.
+        if [ "$DTR_EXECUTE" = "true" ]; then
+          # --yes waives the interactive prompt, which CI cannot answer.
+          # Only the blocks you marked with dtr-run in your own docs are run.
+          dtr $DTR_FILES --allow-exec --yes --json > "$report"
+        else
+          dtr $DTR_FILES --json > "$report"
+        fi
+        status=$?
+
+        # Publish the report before failing, so a step guarded by
+        # `if: failure()` can still read it.
+        {
+          echo "report<<DTR_REPORT_EOF"
+          cat "$report"
+          echo "DTR_REPORT_EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        exit "$status"

@@ -7,6 +7,28 @@
 
 尚無變更。
 
+## [0.1.3] - 2026-09-08
+
+### 新增
+
+- `--yes` 旗標：略過互動確認直接執行，供 CI 等無法互動的環境使用。
+  必須與 `--allow-exec` 併用；單獨提供 `--yes` 會以 exit code 2 中止且
+  不執行任何程式碼。在此之前 `dtr` 在沒有 stdin 的環境中一律取消執行，
+  等同無法用於 CI。
+- `--json` 旗標：輸出結構化報告（`schema_version` 1）供其他工具或 agent
+  使用，內含每個區塊的檔名、行號、語言、原始碼、exit code、stdout 與
+  stderr。啟用時 stdout 只有 JSON，人類可讀訊息一律改送 stderr。
+- GitHub Action（`action.yml`）：可在 workflow 中以一個步驟驗證文件範例，
+  並以 `report` 輸出同一份 JSON。即使該步驟失敗也會產出，因此後續以
+  `if: failure()` 觸發的步驟仍可取用失敗區塊的細節。
+- `Docs` workflow：本專案以自身的程式碼驗證 `examples/sample_readme.md`，
+  並確認 `README.md` 不含可執行區塊。
+
+### 變更
+
+- `SECURITY.md` 補上 `--yes` 的定位與責任歸屬：它是明示的例外而非預設，
+  並新增 `pull_request_target` 情境的警告。
+
 ## [0.1.2] - 2026-09-06
 
 ### 修正

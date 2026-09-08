@@ -1,0 +1,27 @@
+name: Docs
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-examples:
+    name: Validate documentation examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Dogfooding: this repository validates its own example tutorial with the
+      # code in this commit, so a broken example fails CI here first.
+      - name: Install from source
+        run: python -m pip install --disable-pip-version-check .
+
+      - name: Validate the example tutorial
+        run: dtr examples/sample_readme.md --allow-exec --yes
+
+      - name: Confirm README has no executable blocks
+        run: dtr README.md

@@ -5,9 +5,17 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/docs-that-run.svg)](https://pypi.org/project/docs-that-run/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Validate code examples in your documentation by actually running them.**
+**Test the quickstart in your README — not just the code snippets.**
 
-`docs-that-run` parses Markdown files and executes explicitly marked Python and Bash code blocks to verify your documentation stays accurate. It only runs code you explicitly mark with `dtr-run`, and only after you confirm.
+Most documentation-testing tools run Python blocks in isolation. `docs-that-run` also runs **Bash**, and every block in a run **shares one working directory**, so it can validate a real multi-step tutorial:
+
+```
+pip install yourtool  →  yourtool init  →  yourtool run  →  check the output
+```
+
+That sequence is the part of a README that breaks most often — a renamed flag, a changed default, a moved config file — and it is the part nothing else tests.
+
+It only runs blocks you explicitly mark with `dtr-run`, and only after you confirm.
 
 ## Quick Start
 
@@ -111,6 +119,92 @@ dtr README.md --allow-exec
 ```
 
 Type `y` to proceed. Any other input cancels execution.
+
+### Non-interactive runs (CI)
+
+There is no one to answer the prompt in CI, so a run without a terminal cancels instead of executing. Add `--yes` to waive the prompt:
+
+```bash
+dtr README.md --allow-exec --yes
+```
+
+`--yes` must be combined with `--allow-exec`; on its own it exits with code 2 and runs nothing. Use it only on documentation you control — see [SECURITY.md](SECURITY.md).
+
+## GitHub Action
+
+Validate your documentation on every push:
+
+```yaml
+name: Docs
+on: [push, pull_request]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gfr211306-crypto/docs-that-run@v0.1.3
+        with:
+          files: README.md
+```
+
+| Input | Default | Description |
+| --- | --- | --- |
+| `files` | `README.md` | Markdown files to check, separated by spaces |
+| `execute` | `true` | Set to `false` to scan only and never run anything |
+| `version` | latest | Pin a specific `docs-that-run` release |
+| `python-version` | `3.12` | Python used to run the examples |
+
+The step fails when any marked block fails, so a broken quickstart shows up as a red check instead of an issue from a confused user.
+
+### Machine-readable output
+
+`--json` writes a structured report to stdout and moves every human-readable message to stderr, so the result can be piped into another tool:
+
+```bash
+dtr README.md --allow-exec --yes --json > report.json
+```
+
+```json
+{
+  "schema_version": 1,
+  "executed": true,
+  "summary": { "total": 2, "executed": 2, "succeeded": 1, "failed": 1, "timed_out": 0 },
+  "blocks": [
+    {
+      "index": 2,
+      "file": "README.md",
+      "line": 67,
+      "language": "bash",
+      "code": "yourtool init --config demo.yaml",
+      "executed": true,
+      "success": false,
+      "exit_code": 2,
+      "stderr": "error: unrecognized argument --config",
+      "timed_out": false
+    }
+  ]
+}
+```
+
+The action exposes the same document as a step output, and produces it **even when the step fails** — so the failing block, its exact code, and its stderr can be handed to an agent that explains the drift and proposes the fix:
+
+```yaml
+- uses: gfr211306-crypto/docs-that-run@v0.1.3
+  id: docs
+  with:
+    files: README.md
+
+- name: Diagnose the drift
+  if: failure()
+  env:
+    REPORT: ${{ steps.docs.outputs.report }}
+  run: echo "$REPORT" | your-agent-step
+```
+
+Detect the drift, diagnose it, propose the fix, verify again — the report is what makes the loop machine-driven instead of a human reading a log.
+
+**Do not** run this on `pull_request_target`, or on any workflow that checks out a fork's contents, with `execute: true`. That would let anyone execute code on your runner by opening a pull request.
 
 ## Requirements
 

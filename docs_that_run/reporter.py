@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
-from typing import Iterable, TextIO, Union
+from typing import Iterable, Optional, TextIO, Union
 
 from .executor import ExecutionResult
 from .parser import CodeBlock
@@ -50,6 +50,76 @@ def report_scan(
         else:
             print("      (空白區塊)", file=stream)
     print(file=stream)
+
+
+def build_json_report(
+    blocks: list[CodeBlock],
+    results: Optional[list[ExecutionResult]] = None,
+    working_directory: Optional[Union[str, Path]] = None,
+) -> dict:
+    """Build a machine-readable report of one run.
+
+    ``results`` is ``None`` for a scan-only run. The returned mapping is
+    JSON-serialisable and is the contract other tools and agents consume, so
+    ``schema_version`` is bumped whenever a field changes meaning.
+    """
+
+    from . import __version__
+
+    executed_run = results is not None
+    entries: list[dict] = []
+
+    for index, block in enumerate(blocks, start=1):
+        entry: dict = {
+            "index": index,
+            "file": str(block.source) if block.source is not None else None,
+            "line": block.line_number,
+            "language": block.language,
+            "code": block.code,
+            "executed": False,
+        }
+        if executed_run and index <= len(results or []):
+            result = (results or [])[index - 1]
+            entry.update(
+                {
+                    "executed": True,
+                    "success": result.success,
+                    "exit_code": result.return_code,
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                    "duration_seconds": round(result.duration, 3),
+                    "timed_out": result.timed_out,
+                }
+            )
+        entries.append(entry)
+
+    executed_entries = [entry for entry in entries if entry["executed"]]
+    failed = [entry for entry in executed_entries if not entry["success"]]
+    timed_out = [entry for entry in executed_entries if entry["timed_out"]]
+
+    files: list[str] = []
+    for entry in entries:
+        name = entry["file"]
+        if name is not None and name not in files:
+            files.append(name)
+
+    return {
+        "schema_version": 1,
+        "tool_version": __version__,
+        "executed": executed_run,
+        "files": files,
+        "summary": {
+            "total": len(entries),
+            "executed": len(executed_entries),
+            "succeeded": len(executed_entries) - len(failed),
+            "failed": len(failed),
+            "timed_out": len(timed_out),
+        },
+        "working_directory": (
+            str(working_directory) if working_directory is not None else None
+        ),
+        "blocks": entries,
+    }
 
 
 def report_result(
