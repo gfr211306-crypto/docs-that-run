@@ -10,14 +10,21 @@ Validate executable examples in local Markdown files with the bundled
 
 ## Run the Tool
 
-Locate this skill's directory from the loaded `SKILL.md`, then invoke:
+Prefer the installed command when it is available:
 
 ```text
-python <skill-directory>/scripts/dtr.py <markdown-files...>
+dtr <markdown-files...>
+```
+
+If `dtr` is not on PATH, run the copy bundled with this plugin. From this
+skill's directory the launcher sits two levels up:
+
+```text
+python <plugin-directory>/scripts/dtr.py <markdown-files...>
 ```
 
 Use any available Python 3.9-or-newer interpreter (`python`, `python3`, or
-`py -3`); the command above uses `python` as a portable placeholder.
+`py -3`); the commands above use `python` as a portable placeholder.
 Use absolute Markdown paths when the command runs outside the user's project
 directory.
 
@@ -74,5 +81,7 @@ echo "validated"
 Language aliases `py` and `sh` are also supported. Other languages and blocks
 without the marker are ignored.
 
-For a detailed security analysis, read [SECURITY.md](SECURITY.md) only when
-the user asks about risks, trust boundaries, or vulnerability handling.
+For a detailed security analysis, read
+[SECURITY.md](https://github.com/gfr211306-crypto/docs-that-run/blob/main/SECURITY.md)
+only when the user asks about risks, trust boundaries, or vulnerability
+handling.

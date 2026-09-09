@@ -1,0 +1,35 @@
+{
+  "name": "docs-that-run",
+  "version": "0.1.3",
+  "description": "Validate the runnable examples in Markdown documentation. Scans by default and only executes blocks explicitly marked dtr-run, after the user confirms.",
+  "author": {
+    "name": "gfr211306-crypto",
+    "url": "https://github.com/gfr211306-crypto"
+  },
+  "homepage": "https://github.com/gfr211306-crypto/docs-that-run",
+  "repository": "https://github.com/gfr211306-crypto/docs-that-run",
+  "license": "MIT",
+  "keywords": [
+    "markdown",
+    "documentation",
+    "testing",
+    "python",
+    "cli"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Docs That Run",
+    "shortDescription": "Validate marked Python and Bash examples in Markdown",
+    "longDescription": "Scan local Markdown documentation and, with explicit user authorization, execute only Python and Bash blocks marked dtr-run.",
+    "developerName": "gfr211306-crypto",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/gfr211306-crypto/docs-that-run",
+    "defaultPrompt": [
+      "Scan my Markdown documentation for marked runnable examples.",
+      "Validate the dtr-run blocks in this README without executing them."
+    ]
+  }
+}

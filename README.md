@@ -206,6 +206,22 @@ Detect the drift, diagnose it, propose the fix, verify again — the report is w
 
 **Do not** run this on `pull_request_target`, or on any workflow that checks out a fork's contents, with `execute: true`. That would let anyone execute code on your runner by opening a pull request.
 
+## Use with Codex
+
+This repository is also a Codex plugin, so an agent can run the checks for you
+and explain what broke. Install it straight from the repository:
+
+```bash
+git clone https://github.com/gfr211306-crypto/docs-that-run.git
+```
+
+Then point Codex at the clone; the manifest lives at
+`.codex-plugin/plugin.json` and the skill at `skills/docs-that-run/SKILL.md`.
+
+The skill keeps the same trust boundary as the CLI: it scans by default, it
+never adds `--allow-exec` on its own, and it leaves the confirmation prompt to
+you rather than answering it on your behalf.
+
 ## Requirements
 
 - Python 3.9 or newer

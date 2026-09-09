@@ -5,7 +5,15 @@
 
 ## [未發布]
 
-尚無變更。
+### 變更
+
+- 改為 Codex plugin 的標準結構：新增 `.codex-plugin/plugin.json` 資訊清單，
+  並把 `SKILL.md` 移到 `skills/docs-that-run/SKILL.md`。先前 `SKILL.md`
+  放在 repo 根目錄，不符合目前的 plugin 規格，因此無法被安裝。
+- 新增 `.agents/plugins/marketplace.json`，讓其他人可以直接從這個
+  repository 安裝這個 plugin。
+- `SKILL.md` 內的路徑隨之更新：優先使用已安裝的 `dtr` 指令，找不到時才改用
+  隨 plugin 附帶的 `scripts/dtr.py`。
 
 ## [0.1.3] - 2026-09-08
 
