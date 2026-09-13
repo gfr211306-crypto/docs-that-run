@@ -206,6 +206,10 @@ Detect the drift, diagnose it, propose the fix, verify again — the report is w
 
 **Do not** run this on `pull_request_target`, or on any workflow that checks out a fork's contents, with `execute: true`. That would let anyone execute code on your runner by opening a pull request.
 
+## Used by
+
+- [StudyForge](https://github.com/gfr211306-crypto/StudyForge) — runs the action on every push to check that its documented public API still imports.
+
 ## Use with Codex
 
 This repository is also a Codex plugin, so an agent can run the checks for you
