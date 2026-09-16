@@ -1,123 +1,90 @@
-# 安全政策
+# Security Policy
 
-`docs-that-run`（`dtr`）的核心功能就是**在本機執行文件裡的程式碼**。因此
-這份文件不只說明如何回報漏洞，也明確定義這個工具的威脅模型：哪些防護是
-設計上保證的、哪些不是。請在使用前讀完「威脅模型」一節。
+The core function of `docs-that-run` (`dtr`) is **executing code from documentation on your machine**. This document therefore does more than explain how to report a vulnerability: it defines the tool's threat model, stating which protections are guaranteed by design and which are not. Please read the Threat Model section before using it.
 
-## 支援版本
+## Supported Versions
 
-| 版本 | 是否提供安全性修補 |
+| Version | Security patches |
 | --- | --- |
-| 0.1.3（最新） | ✅ |
-| 0.1.2 以前 | ❌ 請升級至最新版 |
+| 0.2.0 (latest) | ✅ |
+| 0.1.x and earlier | ❌ Please upgrade |
 
-專案仍在 `0.1.x` 階段，只有最新的釋出版本會收到修補。
+The project is still pre-1.0. Only the most recent release receives patches.
 
-## 回報漏洞
+## Reporting a Vulnerability
 
-**請勿透過公開 issue 回報安全問題。**
+**Please do not report security issues through public issues.**
 
-請使用 GitHub 的私下回報管道：
+Use GitHub's private reporting channel:
 
-1. 前往 <https://github.com/gfr211306-crypto/docs-that-run/security/advisories>
-2. 點選 **Report a vulnerability**
-3. 說明影響版本、重現步驟，以及你認為被破壞的是下列哪一項安全性質
+1. Go to <https://github.com/gfr211306-crypto/docs-that-run/security/advisories>
+2. Click **Report a vulnerability**
+3. Describe the affected versions, the steps to reproduce, and which of the security properties below you believe is broken
 
-若私下回報管道無法使用，請開一個**不包含重現細節**的 issue，說明你需要
-私下聯繫維護者，我們會提供管道。
+If private reporting is unavailable, open an issue that contains **no reproduction details**, stating that you need to contact the maintainer privately, and a channel will be provided.
 
-回報後你可以預期：
+After reporting, you can expect:
 
-- **7 天內**收到初次回覆確認已收到
-- 確認為漏洞後，會在 advisory 中與你討論修補方向與揭露時程
-- 修補釋出時，除非你要求匿名，否則會在 advisory 與 CHANGELOG 中致謝
+- An acknowledgement **within 7 days**
+- Once confirmed, a discussion in the advisory about the fix and the disclosure timeline
+- Credit in the advisory and the changelog when the fix ships, unless you ask to remain anonymous
 
-## 威脅模型
+## Threat Model
 
-### 設計前提
+### Design assumption
 
-`dtr` 假設你執行的是**你自己已經決定要信任的本機 Markdown 文件**。它是
-文件驗證工具，不是不受信任程式碼的執行沙箱。
+`dtr` assumes you are running **local Markdown files you have already decided to trust**. It is a documentation validator, not a sandbox for untrusted code.
 
-### 目前提供的防護
+### What is protected today
 
-這些是設計上的保證，被繞過即視為漏洞：
+These are guarantees by design. Bypassing any of them is a vulnerability:
 
-- **預設不執行任何程式碼。** 未加 `--allow-exec` 時只做掃描與回報。
-- **雙重閘門。** 即使加了 `--allow-exec`，仍需在互動提示中回答 `y`；
-  輸入其他內容、或無法讀取輸入（EOF、Ctrl+C）時一律取消。
-- **`--yes` 是明示的例外，不是預設。** `--yes` 會略過互動提示，供 CI 等
-  無法互動的環境使用。它**必須與 `--allow-exec` 併用**——單獨提供 `--yes`
-  會以 exit code 2 中止，不執行任何程式碼。使用 `--yes` 等於由下指令的人
-  承擔原本由互動確認承擔的判斷，因此只應用於你自己掌控的文件。
-- **只執行明確標記的區塊。** 只有語言標籤後帶 `dtr-run`（區分大小寫）
-  的 `python` / `py` / `bash` / `sh` 區塊會被辨識並執行，其餘區塊會被
-  忽略，不會出現在待執行清單中。
-- **不觸碰網路來源。** `dtr` 只讀取本機 `.md` 檔案，不下載遠端文件、
-  不 clone repository、不安裝任何依賴套件。
-- **不經過額外 shell 字串拼接。** 子程序以參數陣列啟動，不使用
-  `shell=True`；程式碼直接傳給直譯器（`python -c` / `bash -c`）。
-  Bash 區塊本身仍會依 Bash 語意正常進行變數、glob 與命令替換。
-- **每個區塊獨立程序。** Python 變數、環境變數變更、`cd` 都不會在區塊
-  之間殘留。
-- **逾時中止。** 每個區塊預設上限 30 秒。逾時時會嘗試終止程序群組或
-  程序樹（POSIX 使用 `killpg`；Windows 優先使用 `taskkill /T`）；
-  Windows 若無法終止整棵程序樹，會 fallback 終止直接啟動的直譯器程序。
+- **Nothing executes by default.** Without `--allow-exec`, `dtr` only scans and reports.
+- **Two gates.** Even with `--allow-exec`, you must answer `y` at an interactive prompt. Any other input — or an unreadable input stream (EOF, Ctrl+C) — cancels the run.
+- **`--yes` is an explicit exception, not a default.** `--yes` waives the interactive prompt for environments such as CI that cannot answer it. It **must be combined with `--allow-exec`**: supplied on its own it exits with code 2 and runs nothing. Using `--yes` moves the judgement that the prompt was asking for onto whoever wrote the command, so it belongs only on documentation you control.
+- **Only explicitly marked blocks run.** Only `python` / `py` / `bash` / `sh` blocks whose language tag is followed by `dtr-run` (case-sensitive) are recognised and executed. Every other block is ignored and never appears in the list of blocks to run.
+- **No network sources are touched.** `dtr` reads local `.md` files only. It does not download remote documents, clone repositories, or install dependencies.
+- **No extra shell string assembly.** Subprocesses are launched from an argument array, never with `shell=True`; the code is passed straight to the interpreter (`python -c` / `bash -c`). Bash blocks themselves still undergo normal Bash semantics — variable expansion, globbing and command substitution.
+- **One process per block.** Python variables, environment changes and `cd` do not persist between blocks.
+- **Timeout termination.** Each block is capped at 30 seconds by default. On timeout the tool attempts to terminate the process group or process tree (`killpg` on POSIX; `taskkill /T` first on Windows). If the whole tree cannot be killed on Windows, it falls back to terminating the interpreter process it started directly.
 
-### 目前**不**提供的防護
+### What is **not** protected today
 
-以下是已知且刻意的限制。落在這個範圍內的行為**不算漏洞**，但仍應在
-文件中被清楚說明：
+These are known and deliberate limitations. Behaviour within this scope is **not a vulnerability**, but it should still be documented clearly:
 
-- **沒有檔案系統隔離。** 程式碼在一個暫存工作目錄中啟動，但那只是工作
-  目錄，不是牢籠。區塊可以讀寫你帳號權限所及的任何路徑，包含
-  `~/.ssh`、`~/.aws`、專案原始碼。
-- **完整繼承環境變數。** 子程序取得目前程序環境變數的副本。**文件裡的
-  程式碼可以讀到你的 API key、token 與憑證。**
-- **沒有網路限制。** 被執行的程式碼可以自由對外連線，包括把上一點讀到
-  的東西送出去。
-- **沒有資源配額。** 沒有 CPU、記憶體、磁碟或程序數量限制。逾時只限制
-  單一區塊的**執行時間**。
-- **背景程序可能存活。** 若區塊啟動一個 detached 程序後立即結束，該區塊
-  不會逾時，程序群組終止也不會被觸發，背景程序會繼續執行。
-- **暫存工作目錄不會自動刪除。** 執行後保留以便檢查輸出，路徑會顯示在
-  報告中。其中可能含有敏感資料，需自行清理。
+- **No filesystem isolation.** Code starts in a temporary working directory, but that is a working directory, not a cage. A block can read and write any path your account can reach, including `~/.ssh`, `~/.aws` and your project source.
+- **The environment is inherited in full.** Subprocesses receive a copy of the current process environment. **Code in a document can read your API keys, tokens and credentials.**
+- **No network restrictions.** Executed code can make outbound connections freely — including sending out whatever it read above.
+- **No resource quotas.** There are no CPU, memory, disk or process-count limits. The timeout caps only the *wall-clock time* of a single block.
+- **Background processes can survive.** If a block spawns a detached process and then exits immediately, the block does not time out, process-group termination is never triggered, and the background process keeps running.
+- **The temporary working directory is not deleted.** It is kept after the run so you can inspect the output, and its path is printed in the report. It may contain sensitive data; clean it up yourself.
 
-### 屬於漏洞的情況（in scope）
+### In scope
 
-- 在未提供 `--allow-exec` 的情況下發生任何程式碼執行
-- 單獨提供 `--yes`（未加 `--allow-exec`）卻發生執行
-- 在未提供 `--yes` 的情況下繞過互動確認提示
-- 讓**未標記** `dtr-run` 的區塊被執行（例如利用 fence、縮排、HTML 註解
-  或語言別名的解析歧義）
-- 讓逾時機制未在上限後嘗試終止前景直譯器程序；已脫離程序群組的背景
-  程序則屬於上面列出的已知限制
-- `dtr` 本身在解析階段的任意程式碼執行（例如處理惡意 `.md` 時）
-- Bash 直譯器探測邏輯載入非預期的執行檔（Windows 上會從 Git 執行檔
-  位置、`ProgramFiles`、`LOCALAPPDATA`，以及 `PATH` 尋找 `bash.exe`
-  或 `sh.exe`，並將選中的直譯器目錄前置到子程序的 `PATH`）
-- 暫存工作目錄的權限問題導致同機其他使用者可讀寫
+- Any code execution without `--allow-exec`
+- Execution when `--yes` is supplied on its own, without `--allow-exec`
+- Bypassing the interactive confirmation prompt without `--yes`
+- Causing a block **not** marked `dtr-run` to execute — for example through parsing ambiguity in fences, indentation, HTML comments or language aliases
+- A timeout that never attempts to terminate the foreground interpreter process after the limit. Background processes that have escaped the process group are a known limitation listed above, not a vulnerability
+- Arbitrary code execution in `dtr` itself during parsing, for example while handling a malicious `.md`
+- The Bash interpreter discovery logic loading an unintended executable. On Windows it looks for `bash.exe` or `sh.exe` under the Git installation directory, `ProgramFiles`, `LOCALAPPDATA` and `PATH`, and prepends the chosen interpreter's directory to the subprocess `PATH`
+- Permissions on the temporary working directory that let other users on the same machine read or write it
 
-### 不屬於漏洞的情況（out of scope）
+### Out of scope
 
-- 「我對一份惡意文件執行 `--allow-exec` 並回答 `y`，結果它做了壞事」
-  —— 這是設計行為，不是漏洞
-- 缺少沙箱、資源限制、網路隔離 —— 這些是上面列出的已知限制
-- 在 CI 中使用 `--allow-exec --yes` 所造成的後果——那是刻意提供的
-  非互動模式，責任在設定該 workflow 的人
+- "I ran `--allow-exec` against a malicious document and answered `y`, and it did something bad." That is the designed behaviour, not a vulnerability.
+- The absence of sandboxing, resource limits or network isolation — these are the known limitations listed above.
+- Consequences of using `--allow-exec --yes` in CI. That is the deliberately provided non-interactive mode, and responsibility rests with whoever configured the workflow.
 
-## 使用建議
+## Recommended Usage
 
-若你要對**非自己撰寫**的文件執行：
+If you are running this against documentation **you did not write**:
 
-- 在容器或 VM 中執行，不要在日常開發機上執行
-- 先用不帶 `--allow-exec` 的掃描模式看過所有會被執行的區塊
-- 使用乾淨的環境變數（例如 `env -i` 或專用的最小化 shell）
-- 不要在 CI 上對外部 PR 的內容自動加 `--allow-exec --yes`。用
-  `pull_request_target` 或會 checkout fork 內容的 workflow 執行 `--yes`，
-  等於讓任何人送 PR 就能在你的 runner 上執行程式碼
+- Run it in a container or VM, not on your daily development machine
+- Scan first without `--allow-exec` and read every block that would run
+- Use a clean environment — for example `env -i` or a dedicated minimal shell
+- Do not add `--allow-exec --yes` to CI that runs on external pull requests. Running `--yes` from `pull_request_target`, or from any workflow that checks out a fork's contents, lets anyone execute code on your runner by opening a pull request
 
-## 未來方向
+## Roadmap
 
-沙箱與資源限制是專案已知的缺口。若你對這部分有想法或想貢獻實作，
-歡迎在 issue 中討論設計，再送 PR。
+Sandboxing and resource limits are known gaps. If you have ideas or want to contribute an implementation, please open an issue to discuss the design before sending a pull request.
