@@ -7,6 +7,7 @@ import sys
 from typing import Iterable, Optional, TextIO, Union
 
 from .executor import ExecutionResult
+from .messages import plural, t
 from .parser import CodeBlock
 
 
@@ -21,35 +22,38 @@ def report_scan(
 ) -> None:
     """Display executable blocks found in one Markdown file."""
 
-    print(f"📄 掃描檔案: {path}", file=stream)
+    print(t("scan.file", path=path), file=stream)
     print(file=stream)
 
     count = len(blocks)
     if count == 0:
-        print("找不到標記為可執行的程式碼區塊。", file=stream)
+        print(t("scan.none"), file=stream)
         print(file=stream)
         return
 
-    print(f"找到 {count} 個標記為可執行的程式碼區塊:", file=stream)
+    print(t("scan.found", count=count, s=plural(count)), file=stream)
     for index, block in enumerate(blocks, start=1):
-        print(
-            f"  [{index}] {block.display_language} (第 {block.line_number} 行)",
-            file=stream,
-        )
+        print(_scan_entry(index, block), file=stream)
 
     print(file=stream)
-    print("即將執行的程式碼:", file=stream)
+    print(t("scan.about_to_run"), file=stream)
     for index, block in enumerate(blocks, start=1):
-        print(
-            f"  [{index}] {block.display_language} (第 {block.line_number} 行)",
-            file=stream,
-        )
+        print(_scan_entry(index, block), file=stream)
         if block.code:
             for code_line in block.code.splitlines():
                 print(f"      {code_line}", file=stream)
         else:
-            print("      (空白區塊)", file=stream)
+            print(t("scan.empty_block"), file=stream)
     print(file=stream)
+
+
+def _scan_entry(index: int, block: CodeBlock) -> str:
+    return t(
+        "scan.entry",
+        index=index,
+        language=block.display_language,
+        line=block.line_number,
+    )
 
 
 def build_json_report(
@@ -135,32 +139,37 @@ def report_result(
     source_location = _source_location(block)
     print(SEPARATOR, file=stream)
     print(
-        f"[{index}/{total}] 執行 {block.display_language} 區塊 "
-        f"({source_location})",
+        t(
+            "result.header",
+            index=index,
+            total=total,
+            language=block.display_language,
+            location=source_location,
+        ),
         file=stream,
     )
     print(SEPARATOR, file=stream)
 
     if result.success:
-        print(f"✅ 成功 ({result.duration:.2f}s)", file=stream)
+        print(t("result.success", duration=result.duration), file=stream)
     elif result.timed_out:
-        print(f"❌ Timeout ({result.duration:.2f}s)", file=stream)
+        print(t("result.timeout", duration=result.duration), file=stream)
     else:
         exit_code = (
             str(result.return_code)
             if result.return_code is not None
-            else "unavailable"
+            else t("result.exit_code_unavailable")
         )
         print(
-            f"❌ 失敗 (exit code {exit_code}) ({result.duration:.2f}s)",
+            t("result.failure", code=exit_code, duration=result.duration),
             file=stream,
         )
 
     if result.stdout:
-        print("輸出:", file=stream)
+        print(t("result.stdout"), file=stream)
         print(result.stdout.rstrip(), file=stream)
     if result.stderr:
-        print("錯誤:", file=stream)
+        print(t("result.stderr"), file=stream)
         print(result.stderr.rstrip(), file=stream)
     print(file=stream)
 
@@ -177,15 +186,16 @@ def report_summary(
     succeeded = sum(result.success for result in result_list)
     failed = len(result_list) - succeeded
 
+    total = len(result_list)
     print(SEPARATOR, file=stream)
-    print("📊 執行摘要", file=stream)
+    print(t("summary.title"), file=stream)
     print(SEPARATOR, file=stream)
-    print(f"總共: {len(result_list)} 個區塊", file=stream)
-    print(f"✅ 成功: {succeeded}", file=stream)
-    print(f"❌ 失敗: {failed}", file=stream)
+    print(t("summary.total", count=total, s=plural(total)), file=stream)
+    print(t("summary.succeeded", count=succeeded), file=stream)
+    print(t("summary.failed", count=failed), file=stream)
     print(file=stream)
-    print(f"📁 工作目錄: {Path(working_directory)}", file=stream)
-    print("   (執行過程中產生的檔案保存在此目錄)", file=stream)
+    print(t("summary.workdir", path=Path(working_directory)), file=stream)
+    print(t("summary.workdir_note"), file=stream)
 
 
 def _source_location(block: CodeBlock) -> str:

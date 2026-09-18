@@ -9,6 +9,7 @@ import sys
 from typing import Callable, Optional, Sequence, TextIO
 
 from .executor import create_working_directory, execute_block
+from .messages import t
 from .parser import CodeBlock, parse_markdown
 from .reporter import (
     build_json_report,
@@ -25,37 +26,29 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dtr",
         allow_abbrev=False,
-        description=(
-            "掃描 Markdown 中標記 dtr-run 的 Python 與 Bash 程式碼區塊。"
-        ),
+        description=t("cli.description"),
     )
     parser.add_argument(
         "files",
         nargs="*",
         metavar="FILE",
-        help="要掃描的 Markdown 檔案；未指定時使用 README.md",
+        help=t("cli.help.files"),
     )
     parser.add_argument(
         "--allow-exec",
         action="store_true",
-        help="允許在確認後執行標記 dtr-run 的區塊",
+        help=t("cli.help.allow_exec"),
     )
     parser.add_argument(
         "--yes",
         action="store_true",
-        help=(
-            "略過互動確認直接執行；必須與 --allow-exec 併用。"
-            "供 CI 等無法互動的環境使用，只對你信任的文件使用。"
-        ),
+        help=t("cli.help.yes"),
     )
     parser.add_argument(
         "--json",
         dest="json_output",
         action="store_true",
-        help=(
-            "以 JSON 輸出結果供其他工具或 agent 使用；"
-            "人類可讀的訊息改送 stderr，stdout 只會有 JSON。"
-        ),
+        help=t("cli.help.json"),
     )
     return parser
 
@@ -74,10 +67,7 @@ def main(
     arguments = build_argument_parser().parse_args(argv)
 
     if arguments.yes and not arguments.allow_exec:
-        print(
-            "錯誤: --yes 必須與 --allow-exec 併用；單獨使用不會執行任何程式碼。",
-            file=stderr,
-        )
+        print(t("error.yes_without_allow_exec"), file=stderr)
         return 2
 
     # With --json, stdout carries the JSON document and nothing else, so every
@@ -89,16 +79,16 @@ def main(
     all_blocks: list[CodeBlock] = []
     for path in paths:
         if path.suffix.lower() != ".md":
-            print(f"錯誤: 只支援 .md Markdown 檔案: {path}", file=stderr)
+            print(t("error.not_markdown", path=path), file=stderr)
             return 2
         if not path.is_file():
-            print(f"錯誤: 找不到檔案: {path}", file=stderr)
+            print(t("error.file_not_found", path=path), file=stderr)
             return 2
 
         try:
             blocks = parse_markdown(path)
         except (OSError, UnicodeError) as error:
-            print(f"錯誤: 無法讀取 {path}: {error}", file=stderr)
+            print(t("error.read_failed", path=path, error=error), file=stderr)
             return 2
 
         report_scan(path, blocks, stream=human)
@@ -123,20 +113,14 @@ def main(
         return 0
 
     if not arguments.allow_exec:
-        print(
-            "🔒 僅完成掃描；未提供 --allow-exec，不會執行任何程式碼。",
-            file=human,
-        )
+        print(t("scan.only"), file=human)
         emit_json()
         return 0
 
     if arguments.yes:
-        print(
-            "⚠️  已指定 --yes，略過互動確認並直接執行以上程式碼。",
-            file=human,
-        )
+        print(t("exec.yes_notice"), file=human)
     else:
-        prompt = "⚠️  即將執行以上程式碼，是否繼續? (y/n): "
+        prompt = t("exec.prompt")
         try:
             if arguments.json_output:
                 # Keep stdout free of anything but JSON.
@@ -145,12 +129,12 @@ def main(
             else:
                 answer = input_func(prompt)
         except (EOFError, KeyboardInterrupt):
-            print("\n已取消執行。", file=human)
+            print("\n" + t("exec.cancelled"), file=human)
             emit_json()
             return 0
 
         if answer.strip().lower() not in {"y", "yes"}:
-            print("已取消執行。", file=human)
+            print(t("exec.cancelled"), file=human)
             emit_json()
             return 0
 

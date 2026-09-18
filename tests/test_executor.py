@@ -1,4 +1,6 @@
+import os
 from pathlib import Path
+import sys
 import time
 
 import pytest
@@ -8,6 +10,7 @@ from docs_that_run.executor import (
     create_working_directory,
     execute_block,
     find_bash,
+    find_python,
 )
 from docs_that_run.parser import CodeBlock
 
@@ -84,7 +87,7 @@ def test_interrupts_block_after_timeout(tmp_path: Path) -> None:
 
     assert result.success is False
     assert result.timed_out is True
-    assert "已中止" in result.stderr
+    assert "was terminated" in result.stderr
     assert elapsed < 3
 
 
@@ -144,3 +147,64 @@ def test_create_working_directory_preserves_directory() -> None:
         assert workdir.name.startswith("dtr_")
     finally:
         workdir.rmdir()
+
+
+def test_find_python_prefers_the_path_interpreter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A documented `pip install` targets PATH's Python, so blocks must too."""
+
+    if os.name == "nt":
+        pytest.skip("POSIX shim script")
+
+    shim = tmp_path / "python3"
+    shim.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    shim.chmod(0o755)
+    monkeypatch.setenv("PATH", str(tmp_path))
+
+    assert find_python() == str(shim)
+
+
+def test_find_python_falls_back_to_sys_executable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PATH", str(tmp_path))
+    assert find_python() == sys.executable
+
+
+def test_python_block_runs_under_the_path_interpreter(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The block must run under PATH's Python, not the one running dtr.
+
+    This is the `pip install x` then `import x` sequence a README documents:
+    the Bash block installs into PATH's environment, so the Python block has
+    to look there as well or the documented steps fail spuriously.
+    """
+
+    if os.name == "nt":
+        pytest.skip("POSIX shim script")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    shim = bin_dir / "python3"
+    shim.write_text(
+        "#!/bin/sh\necho picked-up-from-path\nexit 0\n",
+        encoding="utf-8",
+    )
+    shim.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}/usr/bin:/bin")
+
+    block = CodeBlock(
+        language="python",
+        code="raise SystemExit('the real interpreter would have failed')",
+        source=Path("README.md"),
+        line_number=1,
+    )
+    result = execute_block(block, tmp_path / "work")
+
+    assert result.success
+    assert "picked-up-from-path" in result.stdout

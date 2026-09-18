@@ -14,6 +14,7 @@ import tempfile
 import time
 from typing import Optional, Union
 
+from .messages import t
 from .parser import CodeBlock
 
 
@@ -96,7 +97,7 @@ def execute_block(
             success=False,
             return_code=None,
             stdout="",
-            stderr=f"無法啟動執行器: {error}",
+            stderr=t("exec.launch_failed", error=error),
             duration=time.monotonic() - started_at,
         )
 
@@ -115,7 +116,7 @@ def execute_block(
         _terminate_process_tree(process)
         stdout, stderr = process.communicate()
         duration = time.monotonic() - started_at
-        timeout_message = f"執行超過 {timeout:g} 秒，已中止。"
+        timeout_message = t("exec.timeout_message", timeout=timeout)
         stderr = f"{stderr.rstrip()}\n{timeout_message}".lstrip()
         return ExecutionResult(
             block=block,
@@ -180,17 +181,39 @@ def find_bash() -> Optional[str]:
     return path_bash
 
 
+def find_python() -> str:
+    """Locate the Python a documented `pip install` would install into.
+
+    A Bash block that runs ``pip install X`` installs into whichever Python is
+    first on ``PATH``. If the following Python block ran under
+    ``sys.executable`` instead, it could be a different environment — the
+    interpreter dtr itself was installed into — and the documented sequence
+    ``pip install x`` then ``import x`` would fail even though the docs are
+    correct. So the block runs under the ``PATH`` interpreter, falling back to
+    ``sys.executable`` when there is none.
+    """
+
+    names = ("python", "python3") if os.name == "nt" else ("python3", "python")
+    for name in names:
+        found = shutil.which(name)
+        if found:
+            return found
+    return sys.executable
+
+
 def _command_for_block(block: CodeBlock) -> list[str]:
     if block.language == "python":
-        return [sys.executable, "-c", block.code]
+        return [find_python(), "-c", block.code]
     if block.language == "bash":
         bash = find_bash()
         if bash is None:
             raise RuntimeError(
-                "找不到 Bash 執行器；請先在本機安裝 Bash。"
+                t("exec.bash_not_found")
             )
         return [bash, "-c", block.code]
-    raise RuntimeError(f"不支援的語言: {block.language}")
+    raise RuntimeError(
+        t("exec.unsupported_language", language=block.language)
+    )
 
 
 def _environment_for_command(
@@ -198,7 +221,12 @@ def _environment_for_command(
     command: list[str],
 ) -> dict[str, str]:
     environment = os.environ.copy()
-    if block.language == "bash":
+    # On Windows the Bash interpreter is usually Git Bash, whose own utilities
+    # live beside it and are not otherwise on PATH, so its directory is added.
+    # On POSIX the interpreter was found through PATH already, and prepending
+    # its directory would push /usr/bin ahead of an active virtualenv — which
+    # would send a documented `pip install` to the wrong Python.
+    if block.language == "bash" and os.name == "nt":
         interpreter_directory = str(Path(command[0]).resolve().parent)
         existing_path = environment.get("PATH", "")
         environment["PATH"] = (

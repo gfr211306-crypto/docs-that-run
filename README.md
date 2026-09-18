@@ -130,6 +130,16 @@ dtr README.md --allow-exec --yes
 
 `--yes` must be combined with `--allow-exec`; on its own it exits with code 2 and runs nothing. Use it only on documentation you control — see [SECURITY.md](SECURITY.md).
 
+### Language
+
+Output is English by default. Set `DTR_LANG` for Traditional Chinese:
+
+```bash
+DTR_LANG=zh-TW dtr README.md
+```
+
+`zh`, `zh_TW` and `zh-TW` all select Chinese; anything else falls back to English. The `--json` report is never translated — its field names are a contract for other tools.
+
 ## GitHub Action
 
 Validate your documentation on every push:
@@ -143,7 +153,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: gfr211306-crypto/docs-that-run@v0.1.3
+      - uses: gfr211306-crypto/docs-that-run@v0.2.0
         with:
           files: README.md
 ```
@@ -190,7 +200,7 @@ dtr README.md --allow-exec --yes --json > report.json
 The action exposes the same document as a step output, and produces it **even when the step fails** — so the failing block, its exact code, and its stderr can be handed to an agent that explains the drift and proposes the fix:
 
 ```yaml
-- uses: gfr211306-crypto/docs-that-run@v0.1.3
+- uses: gfr211306-crypto/docs-that-run@v0.2.0
   id: docs
   with:
     files: README.md

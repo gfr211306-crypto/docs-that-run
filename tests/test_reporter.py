@@ -44,7 +44,7 @@ def test_failure_report_includes_exit_code() -> None:
         stream=output,
     )
 
-    assert "失敗 (exit code 3)" in output.getvalue()
+    assert "Failed (exit code 3)" in output.getvalue()
 
 
 def test_execution_report_includes_source_filename_and_line_number() -> None:

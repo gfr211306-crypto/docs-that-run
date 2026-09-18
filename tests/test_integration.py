@@ -69,9 +69,9 @@ def test_example_markdown_executes_in_order_and_reports_results() -> None:
         assert all(result.success for result in results)
         assert results[2].stdout == "Read from shared file: Hello from bash\n"
         report = output.getvalue()
-        assert "執行摘要" in report
-        assert "✅ 成功: 4" in report
-        assert f"📁 工作目錄: {workdir}" in report
+        assert "Summary" in report
+        assert "✅ Succeeded: 4" in report
+        assert f"📁 Working directory: {workdir}" in report
     finally:
         for child in workdir.iterdir():
             if child.is_file():
@@ -98,7 +98,7 @@ def test_cli_does_not_execute_without_allow_exec(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert not marker.exists()
-    assert "未提供 --allow-exec" in output.getvalue()
+    assert "--allow-exec was not supplied" in output.getvalue()
 
 
 def test_cli_requires_confirmation_even_with_allow_exec(
@@ -122,7 +122,7 @@ def test_cli_requires_confirmation_even_with_allow_exec(
 
     assert exit_code == 0
     assert not marker.exists()
-    assert "已取消執行" in output.getvalue()
+    assert "Execution cancelled" in output.getvalue()
 
 
 def test_cli_executes_after_flag_and_confirmation(tmp_path: Path) -> None:
@@ -142,7 +142,7 @@ def test_cli_executes_after_flag_and_confirmation(tmp_path: Path) -> None:
     assert exit_code == 0
     report = output.getvalue()
     assert "integration success" in report
-    assert "✅ 成功: 1" in report
+    assert "✅ Succeeded: 1" in report
 
 
 def test_cli_returns_failure_when_a_block_fails(tmp_path: Path) -> None:
@@ -160,7 +160,7 @@ def test_cli_returns_failure_when_a_block_fails(tmp_path: Path) -> None:
     )
 
     assert exit_code == 1
-    assert "❌ 失敗: 1" in output.getvalue()
+    assert "❌ Failed: 1" in output.getvalue()
 
 
 def test_cli_yes_without_allow_exec_is_rejected(tmp_path: Path) -> None:
@@ -183,7 +183,7 @@ def test_cli_yes_without_allow_exec_is_rejected(tmp_path: Path) -> None:
 
     assert exit_code == 2
     assert not marker.exists()
-    assert "--yes 必須與 --allow-exec 併用" in errors.getvalue()
+    assert "--yes must be combined with --allow-exec" in errors.getvalue()
 
 
 def test_cli_yes_skips_confirmation_and_executes(tmp_path: Path) -> None:
@@ -202,9 +202,9 @@ def test_cli_yes_skips_confirmation_and_executes(tmp_path: Path) -> None:
 
     assert exit_code == 0
     report = output.getvalue()
-    assert "略過互動確認" in report
+    assert "skipping the confirmation" in report
     assert "non interactive success" in report
-    assert "✅ 成功: 1" in report
+    assert "✅ Succeeded: 1" in report
 
 
 def test_cli_yes_still_ignores_unmarked_blocks(tmp_path: Path) -> None:
@@ -226,7 +226,7 @@ def test_cli_yes_still_ignores_unmarked_blocks(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert not marker.exists()
-    assert "找不到標記為可執行的程式碼區塊" in output.getvalue()
+    assert "No code blocks marked as executable" in output.getvalue()
 
 
 def test_cli_cancels_when_confirmation_input_is_unavailable(
@@ -256,7 +256,7 @@ def test_cli_cancels_when_confirmation_input_is_unavailable(
 
     assert exit_code == 0
     assert not marker.exists()
-    assert "已取消執行" in output.getvalue()
+    assert "Execution cancelled" in output.getvalue()
 
 
 def test_json_scan_only_report_is_machine_readable(tmp_path: Path) -> None:
@@ -291,7 +291,7 @@ def test_json_scan_only_report_is_machine_readable(tmp_path: Path) -> None:
     assert block["code"] == "print('one')"
     assert block["executed"] is False
     # Human-readable text must never contaminate the JSON on stdout.
-    assert "掃描檔案" in errors.getvalue()
+    assert "Scanning:" in errors.getvalue()
 
 
 def test_json_report_carries_failure_details_for_diagnosis(
@@ -359,4 +359,4 @@ def test_cli_rejects_non_markdown_files(tmp_path: Path) -> None:
     exit_code = cli.main([str(text_file)], stderr=errors)
 
     assert exit_code == 2
-    assert "只支援 .md" in errors.getvalue()
+    assert "only .md" in errors.getvalue()

@@ -3,10 +3,20 @@
 本檔案格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，
 版本編號遵循 [語意化版本](https://semver.org/lang/zh-TW/)。
 
-## [未發布]
+## [0.2.0] - 2026-09-18
 
 ### 變更
 
+- **CLI 輸出改為預設英文。** 先前所有訊息都寫死繁體中文，但 README、PyPI
+  說明與 GitHub Action 都是英文，導致英語使用者裝起來之後看不懂輸出。
+  繁體中文保留，設定環境變數 `DTR_LANG=zh-TW`（也接受 `zh`、`zh_TW`）即可
+  切回。未知的值一律回落英文。訊息集中在新的 `docs_that_run/messages.py`。
+- **Python 區塊改用 `PATH` 上的直譯器。** 先前使用 `sys.executable`，也就是
+  執行 `dtr` 的那個直譯器。Bash 區塊裡的 `pip install X` 安裝到 `PATH` 上的
+  Python，兩者可能是不同環境，因此 README 常見的
+  `pip install x` → `import x` 這個多步驟流程會假性失敗。現在依序尋找
+  `python3`、`python`，都找不到才回落 `sys.executable`。
+- `SECURITY.md` 翻譯為英文。
 - 改為 Codex plugin 的標準結構：新增 `.codex-plugin/plugin.json` 資訊清單，
   並把 `SKILL.md` 移到 `skills/docs-that-run/SKILL.md`。先前 `SKILL.md`
   放在 repo 根目錄，不符合目前的 plugin 規格，因此無法被安裝。
@@ -14,6 +24,9 @@
   repository 安裝這個 plugin。
 - `SKILL.md` 內的路徑隨之更新：優先使用已安裝的 `dtr` 指令，找不到時才改用
   隨 plugin 附帶的 `scripts/dtr.py`。
+
+`--json` 報告的欄位名稱與 `schema_version` 不受影響，被執行的程式碼本身的
+輸出也不會被翻譯。
 
 ## [0.1.3] - 2026-09-08
 
@@ -82,7 +95,8 @@
 - 支援 Python 3.9 以上；CI 於 Ubuntu 與 Windows × Python 3.9／3.12
   驗證。
 
-[未發布]: https://github.com/gfr211306-crypto/docs-that-run/compare/v0.1.2...HEAD
+[0.2.0]: https://github.com/gfr211306-crypto/docs-that-run/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/gfr211306-crypto/docs-that-run/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/gfr211306-crypto/docs-that-run/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/gfr211306-crypto/docs-that-run/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/gfr211306-crypto/docs-that-run/releases/tag/v0.1.0

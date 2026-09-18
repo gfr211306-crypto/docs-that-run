@@ -1,6 +1,6 @@
 {
   "name": "docs-that-run",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Validate the runnable examples in Markdown documentation. Scans by default and only executes blocks explicitly marked dtr-run, after the user confirms.",
   "author": {
     "name": "gfr211306-crypto",
